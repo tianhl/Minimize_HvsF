@@ -62,7 +62,7 @@ double H2(const double *xx)
 double F(const double *xx)
 {
   const double M     = xx[0];
-  return 1.76*10000000/(2*M_PI*M)*sqrt(H1(xx)*H2(xx));	
+  return 1.76*1e7/(2*M_PI*M)*sqrt(H1(xx)*H2(xx));	
 }
 
  
@@ -71,8 +71,8 @@ int main()
 
   double m     = 1257.;
   double alpha = 0.1651;
-  double k1    = 500000.;
-  double k2    = 1.;
+  double k1    = 1e7;
+  double k2    = 5e5;
   double phi   = alpha;
 
   double xx[5] = {m, k1, k2, phi, alpha};
@@ -113,6 +113,7 @@ int main()
   TGraph *hvsf = new TGraph(Nstep, harray, farray);
   hvsf->Draw("APL");
   cav->Print("c1.eps");
+  
 
 }
 
