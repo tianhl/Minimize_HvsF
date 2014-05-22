@@ -2,6 +2,7 @@
 #include <map>
 #include <math.h>
 #include "TGraph.h"
+#include "TCanvas.h"
 using namespace std;
 
 
@@ -33,7 +34,7 @@ double H1(const double *xx)
   const double Eq3   = 4*K2*cos(Phi)*sin(Phi)*sin(Phi)*sin(Phi);
   const double Eq4   = M*cos(Alpha-Phi);
   const double Eq5   = (4*M_PI*M*M-2*K1-4*K2)*cos(2*Phi);
-  const double Eq6   = 4*K2*(3*sin(Phi)*sin(Phi)*(cos(Phi)*cos(Phi)-sin(Phi)*sin(Phi)*sin(Phi)*sin(Phi)));
+  const double Eq6   = 4*K2*(3*sin(Phi)*sin(Phi)*cos(Phi)*cos(Phi)-sin(Phi)*sin(Phi)*sin(Phi)*sin(Phi));
 
   return Eq1*(Eq2+Eq3)*Eq4+Eq5+Eq6;
 }
@@ -70,8 +71,8 @@ int main()
 
   double m     = 1257.;
   double alpha = 0.1651;
-  double k1    = 5000000.;
-  double k2    = 5000.;
+  double k1    = 500000.;
+  double k2    = 1.;
   double phi   = alpha;
 
   double xx[5] = {m, k1, k2, phi, alpha};
@@ -79,18 +80,39 @@ int main()
   typename HFMap::iterator hfmap_it;
   HFMap hfmap;
   
-  double nstep    = 100;
-  double phi_step = (M_PI/2 - alpha)/nstep;
-  for(int i = 0; i < nstep; i++){
+  const int Nstep    = 100;
+  double phi_step = (M_PI/2 - alpha)/Nstep;
+
+  double harray[Nstep];
+  double farray[Nstep];
+
+  int i = 0;
+  for(i = 0; i < Nstep; i++){
+    if(i==0){
+      xx[3] = xx[3]+0.0001;
+    }
     double h = H(xx);    
     double f = F(xx);
+    std::cout << "H vs F: " << h << " " << f << std::endl;
+    if(i==0){
+      xx[3] = xx[3]-0.0001;
+    }
     xx[3]    = xx[3] + phi_step;
     hfmap.insert(std::pair<double,double>(h,f));
   }
 
+  i = 0;
   for(hfmap_it=hfmap.begin(); hfmap_it != hfmap.end(); hfmap_it++){
-    std::cout << "H vs F: "  << hfmap_it->first  << " " << hfmap_it->second << std::endl;
+    harray[i] = hfmap_it->first;
+    farray[i] = hfmap_it->second;
+    i++;
   }
+
+
+  TCanvas *cav = new TCanvas("c1");
+  TGraph *hvsf = new TGraph(Nstep, harray, farray);
+  hvsf->Draw("APL");
+  cav->Print("c1.eps");
 
 }
 
