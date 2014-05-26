@@ -15,7 +15,8 @@ GLIBS         = $(ROOTGLIBS) $(SYSLIBS)
 SVCSOURCE     = *.cxx  
 
 all: ${SVCSOURCE} 
-	${CXX} ${SVCSOURCE} ${CXXFLAGS} -o test.exe
+	${CXX} ${SVCSOURCE} $(GLIBS) ${CXXFLAGS} -o test.exe
+
 
 
 clean:

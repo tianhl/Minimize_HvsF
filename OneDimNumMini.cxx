@@ -84,24 +84,16 @@ double AbsDiffToH(const double *pars)
 
   return abs(H(xx)-hpoint);
 }
- 
-int main()
-{
 
-  const double dataPointH[1] = {3041.38127};
-  const double dataPointF[1] = {7.09871e9};
 
-  double m     = 1257.;
-  double alpha = 0.1651;
-  double k1    = 1e7;
-  double k2    = 5e5;
+double GetPhiFromH(const double *pars, const double hpoint){
+  double m     = pars[0];  
+  double k1    = pars[1]; 
+  double k2    = pars[2]; 
+  double alpha = pars[3]; 
+
   double phi   = alpha;
 
-  double xx[5] = {m, k1, k2, phi, alpha};
-
-  // find H point
-
-  const double hpoint  = 3041.38;
   const string minName = "Minuit2";
   const string algName = "";
 
@@ -136,60 +128,79 @@ int main()
   min->Minimize();
 
   const double *xs = min->X();
-  std::cout << "m:      " << xs[0] << std::endl; 
-  std::cout << "k1:     " << xs[1] << std::endl; 
-  std::cout << "k2:     " << xs[2] << std::endl; 
-  std::cout << "phi:    " << xs[3] << std::endl; 
-  std::cout << "alpha:  " << xs[4] << std::endl; 
-  std::cout << "hpoint: " << xs[5] << std::endl; 
   std::cout << "Diff2point: " << min->MinValue()  << std::endl;
 
-  xx[0]=xs[0]; 
-  xx[1]=xs[1]; 
-  xx[2]=xs[2]; 
-  xx[3]=xs[3]; 
-  xx[4]=xs[4]; 
 
+
+  return xs[3];
+}
+
+ 
+int main()
+{
+
+  const double alphalist[8]  = {0.1651,     0.1767,     0.1899,     0.2054,     0.2234,     0.24498,    0.27095,    0.30288   };
+  const double dataPointH[8] = {3041.38127, 2844.29253, 2647.64046, 2451.53013, 2256.10283, 2061.55281, 1868.15417, 1676.30546};
+  const double dataPointF[8] = {1.57145e10, 1.58135e10, 1.60627e10, 1.60596e10, 1.62094e10, 1.6381e10,  1.68788e10, 1.64925e10};
+
+  double m     = 1257.;
+  double alpha = alphalist[0];
+  double k1    = 1e7;
+  double k2    = 5e5;
+  double phi   = alpha;
+
+  double xx[5] = {m, k1, k2, phi, alpha};
+
+  // find H point
+
+  const double hpoint  = dataPointH[0];
+
+  const double pars[4] = {m,k1,k2,alpha};
+  phi = GetPhiFromH(pars,hpoint);
+  std::cout << "GetPhiFromH: " << phi << std::endl;
+
+  xx[3] = phi;
   std::cout << "H point: " << H(xx) << std::endl;
   std::cout << "F point: " << F(xx) << std::endl;
+  std::cout << "Diff btw Theory and Exp: " << F(xx) - dataPointF[0] << std::endl;
 
-  // Draw Plot 
-
-  typedef std::map<double, double> HFMap;
-  typename HFMap::iterator hfmap_it;
-  HFMap hfmap;
-
-  const int Nstep    = 100;
-  double phi_step = (M_PI/2 - alpha)/(Nstep+2);
-
-  double harray[Nstep];
-  double farray[Nstep];
-
-  int i = 0;
-  for(i = 0; i < Nstep; i++){
-    xx[3]    = xx[3] + phi_step;
-    double h, f;    
-    HvsF(xx, &h, &f);
-    hfmap.insert(std::pair<double,double>(h,f));
-    std::cout << "H: " << h << " F: " << f << std::endl;
-  }
-
-  i = 0;
-  for(hfmap_it=hfmap.begin(); hfmap_it != hfmap.end(); hfmap_it++){
-    harray[i] = hfmap_it->first;
-    farray[i] = hfmap_it->second;
-    i++;
-  }
-
-
-  TCanvas *cav  = new TCanvas("c1");
-  TGraph  *hvsf = new TGraph(Nstep, harray, farray);
-  TMarker *data = new TMarker(dataPointH[0], dataPointF[0], 20);
-  data->SetMarkerColor(2);
-  hvsf->SetMarkerStyle(21);
-  hvsf->Draw("APL");
-  data->Draw();
-  cav->Print("FunGraph.eps");
+   // Draw Plot 
+  
+   typedef std::map<double, double> HFMap;
+   typename HFMap::iterator hfmap_it;
+   HFMap hfmap;
+  
+   const int Nstep    = 1000;
+   double phi_step = (M_PI/2 - alpha)/(Nstep+2);
+  
+   double harray[Nstep];
+   double farray[Nstep];
+  
+   int i = 0;
+   for(i = 0; i < Nstep; i++){
+     xx[3]    = xx[3] + phi_step;
+     double h, f;    
+     HvsF(xx, &h, &f);
+     hfmap.insert(std::pair<double,double>(h,f));
+     //std::cout << "H: " << h << " F: " << f << std::endl;
+   }
+  
+   i = 0;
+   for(hfmap_it=hfmap.begin(); hfmap_it != hfmap.end(); hfmap_it++){
+     harray[i] = hfmap_it->first;
+     farray[i] = hfmap_it->second;
+     i++;
+   }
+  
+  
+   TCanvas *cav  = new TCanvas("c1");
+   TGraph  *hvsf = new TGraph(Nstep, harray, farray);
+   TMarker *data = new TMarker(dataPointH[0], dataPointF[0], 20);
+   data->SetMarkerColor(2);
+   hvsf->SetMarkerStyle(21);
+   hvsf->Draw("APL");
+   data->Draw();
+   cav->Print("FunGraph.eps");
 
 
 }
