@@ -109,7 +109,7 @@ double GetPhiFromH(const double *pars, const double hpoint){
   min->SetMaxFunctionCalls(1000000); 
   min->SetMaxIterations(10000);  
   min->SetTolerance(0.001);
-  min->SetPrintLevel(1);
+  min->SetPrintLevel(0);
 
   double minstep[6]    = {0.0,  0.0,  0.0,  0.1,  0.0,    0.0};
   double startpoint[6] = {m,    k1,   k2,   phi,  alpha,  hpoint};
@@ -143,21 +143,16 @@ double GetPhiFromH(const double *pars, const double hpoint){
 //const double dataPointF[8] = {1.57145e10, 1.58135e10, 1.60627e10, 1.60596e10, 1.62094e10, 1.6381e10,  1.68788e10, 1.64925e10};
 
 
-int main()
-{
-
+double Chi2(const double* par){
+  const double m      = 1257.;
+  const double k1     = par[0];
+  const double k2     = par[1];
   double chi2 = 0;
   for (int i = 0; i< 8; i++){
-    const double m      = 1257.;
     const double alpha  = alphalist[i];
-    const double k1     = 13383500;
-    const double k2     = 180000;
     const double hpoint = dataPointH[i];
     double phi    = alpha+0.1;
     double xx[5] = {m, k1, k2, phi, alpha};
-
-    // find H point
-
 
     const double pars[4] = {m,k1,k2,alpha};
     phi = GetPhiFromH(pars,hpoint);
@@ -167,9 +162,53 @@ int main()
     double diff = F(xx) - dataPointF[i];
     chi2 += diff*diff;
   }
+  return chi2;
+}
 
-  
-  std::cout << "chi2: " << chi2 << std::endl;
+int main()
+{
+
+  double kpars[2] = {13383500, 180000};
+
+  const string minName = "Minuit2";
+  const string algName = "";
+
+  ROOT::Math::Functor funChi2(&Chi2,2); 
+
+  // initialize minimizer
+  ROOT::Math::Minimizer* min = 
+    ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
+  min->SetMaxFunctionCalls(1000000); 
+  min->SetMaxIterations(10000);  
+  min->SetTolerance(0.001);
+  min->SetPrintLevel(1);
+
+  double minstep[2]    = {1e5, 100.};
+  double startpoint[2] = {1.2e7, 2.5e5};
+  int    randomSeed = 100;
+
+  TRandom2 r(randomSeed);
+  startpoint[0] = r.Uniform(1e7,2e7);
+  startpoint[1] = r.Uniform(3e5,8e5);
+
+  min->SetFunction(funChi2);
+
+  //min->SetLimitedVariable(0,"k1",   startpoint[0], minstep[0], 1e7, 2e7);
+  //min->SetLimitedVariable(1,"k2",   startpoint[1], minstep[1], 3e5, 3e5);
+
+  min->SetVariable(0,"k1",   startpoint[0], minstep[0]);
+  min->SetVariable(1,"k2",   startpoint[1], minstep[1]);
+
+
+  min->Minimize();
+
+
+  const double *xs = min->X();
+  std::cout << "============K1:   " << xs[0] << std::endl;
+  std::cout << "============K2:   " << xs[1] << std::endl;
+  std::cout << "============Chi2: " << min->MinValue() << std::endl;
+
+  //std::cout << "============chi2: " << Chi2(kpars) << std::endl;
   // Draw Plot 
 
   //  typedef std::map<double, double> HFMap;
@@ -212,9 +251,3 @@ int main()
   //
 
 }
-
-
-
-
-
-
