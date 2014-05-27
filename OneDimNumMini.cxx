@@ -89,6 +89,14 @@ double AbsDiffToH(const double *pars)
   return abs(H(xx)-hpoint);
 }
 
+const string minName = "Minuit2";
+const string algName = "";
+
+ROOT::Math::Functor funH(&AbsDiffToH,6); 
+
+// initialize minimizer
+ROOT::Math::Minimizer* phimin = 
+     ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
 
 double GetPhiFromH(const double *pars, const double hpoint){
   double m     = pars[0];  
@@ -98,18 +106,18 @@ double GetPhiFromH(const double *pars, const double hpoint){
 
   double phi   = alpha;
 
-  const string minName = "Minuit2";
-  const string algName = "";
+  //const string minName = "Minuit2";
+  //const string algName = "";
 
-  ROOT::Math::Functor funH(&AbsDiffToH,6); 
+  //ROOT::Math::Functor funH(&AbsDiffToH,6); 
 
   // initialize minimizer
-  ROOT::Math::Minimizer* min = 
-    ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
-  min->SetMaxFunctionCalls(1000000); 
-  min->SetMaxIterations(10000);  
-  min->SetTolerance(0.001);
-  min->SetPrintLevel(0);
+  //ROOT::Math::Minimizer* min = 
+  //  ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
+  phimin->SetMaxFunctionCalls(1000000); 
+  phimin->SetMaxIterations(10000);  
+  phimin->SetTolerance(0.001);
+  phimin->SetPrintLevel(0);
 
   double minstep[6]    = {0.0,  0.0,  0.0,  0.1,  0.0,    0.0};
   double startpoint[6] = {m,    k1,   k2,   phi,  alpha,  hpoint};
@@ -118,22 +126,22 @@ double GetPhiFromH(const double *pars, const double hpoint){
   TRandom2 r(randomSeed);
   startpoint[3] = r.Uniform(alpha+0.0001,M_PI/2);
 
-  min->SetFunction(funH);
+  phimin->SetFunction(funH);
   std::cout << "startpoint of phi " << startpoint[3] << std::endl;
 
   // Set the free variables to be minimized!
-  min->SetVariable(0,"m",     startpoint[0], minstep[0]);
-  min->SetVariable(1,"k1",    startpoint[1], minstep[1]);
-  min->SetVariable(2,"k2",    startpoint[2], minstep[2]);
-  min->SetLimitedVariable(3,"phi",   startpoint[3], minstep[3], alpha+0.0001, M_PI/2);
-  min->SetVariable(4,"alpha", startpoint[4], minstep[4]);
-  min->SetVariable(5,"hpoint",startpoint[5], minstep[5]);
+  phimin->SetVariable(0,"m",     startpoint[0], minstep[0]);
+  phimin->SetVariable(1,"k1",    startpoint[1], minstep[1]);
+  phimin->SetVariable(2,"k2",    startpoint[2], minstep[2]);
+  phimin->SetLimitedVariable(3,"phi",   startpoint[3], minstep[3], alpha+0.0001, M_PI/2);
+  phimin->SetVariable(4,"alpha", startpoint[4], minstep[4]);
+  phimin->SetVariable(5,"hpoint",startpoint[5], minstep[5]);
 
 
   // do the minimization
-  min->Minimize();
+  phimin->Minimize();
 
-  const double *xs = min->X();
+  const double *xs = phimin->X();
 
   return xs[3];
 }
@@ -162,41 +170,23 @@ double Chi2(const double* par){
 }
 
 
-double FindMinChi2(double *kstartpoint, double *kpar){
+double FindMinChi2(double *kstartpoint, double *kpar, ROOT::Math::Minimizer* min){
 
-  const string minName = "Minuit2";
-  const string algName = "";
-
-  ROOT::Math::Functor funChi2(&Chi2,2); 
-
-  // initialize minimizer
-  ROOT::Math::Minimizer* min = 
-    ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
-  min->SetMaxFunctionCalls(1000000); 
-  min->SetMaxIterations(10000);  
-  min->SetTolerance(0.001);
-  min->SetPrintLevel(1);
 
   double minstep[2]    = {1e5, 100.};
   double startpoint[2] = {1.2e7, 2.5e5};
   startpoint[0] = kstartpoint[0];
   startpoint[1] = kstartpoint[1];
 
-  min->SetFunction(funChi2);
 
   min->SetLimitedVariable(0,"k1",   startpoint[0], minstep[0], 1e7, 2e7);
   min->SetLimitedVariable(1,"k2",   startpoint[1], minstep[1], 3e5, 8e5);
 
-  //min->SetVariable(0,"k1",   startpoint[0], minstep[0]);
-  //min->SetVariable(1,"k2",   startpoint[1], minstep[1]);
 
   min->Minimize();
 
 
   const double *xs = min->X();
-  //std::cout << "============K1:   " << xs[0] << std::endl;
-  //std::cout << "============K2:   " << xs[1] << std::endl;
-  //std::cout << "============Chi2: " << min->MinValue() << std::endl;
 
   kpar[0] = xs[0];
   kpar[1] = xs[1];
@@ -208,42 +198,19 @@ double FindMinChi2(double *kstartpoint, double *kpar){
 int main()
 {
 
-  //const string minName = "Minuit2";
-  //const string algName = "";
+  // initialize minimizer
+  const string minName = "Minuit2";
+  const string algName = "";
+  ROOT::Math::Functor funChi2(&Chi2,2); 
 
-  //ROOT::Math::Functor funChi2(&Chi2,2); 
+  ROOT::Math::Minimizer* min = 
+    ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
+  min->SetMaxFunctionCalls(1000000); 
+  min->SetMaxIterations(10000);  
+  min->SetTolerance(0.001);
+  min->SetPrintLevel(1);
 
-  //// initialize minimizer
-  //ROOT::Math::Minimizer* min = 
-  //  ROOT::Math::Factory::CreateMinimizer(minName.c_str(), algName.c_str());
-  //min->SetMaxFunctionCalls(1000000); 
-  //min->SetMaxIterations(10000);  
-  //min->SetTolerance(0.001);
-  //min->SetPrintLevel(1);
-
-  //double minstep[2]    = {1e5, 100.};
-  //double startpoint[2] = {1.2e7, 2.5e5};
-  //int    randomSeed = 100;
-
-  //TRandom2 r(randomSeed);
-  //startpoint[0] = r.Uniform(1e7,2e7);
-  //startpoint[1] = r.Uniform(3e5,8e5);
-
-  //min->SetFunction(funChi2);
-
-  //min->SetLimitedVariable(0,"k1",   startpoint[0], minstep[0], 1e7, 2e7);
-  //min->SetLimitedVariable(1,"k2",   startpoint[1], minstep[1], 3e5, 8e5);
-
-  ////min->SetVariable(0,"k1",   startpoint[0], minstep[0]);
-  ////min->SetVariable(1,"k2",   startpoint[1], minstep[1]);
-
-  //min->Minimize();
-
-
-  //const double *xs = min->X();
-  //std::cout << "============K1:   " << xs[0] << std::endl;
-  //std::cout << "============K2:   " << xs[1] << std::endl;
-  //std::cout << "============Chi2: " << min->MinValue() << std::endl;
+  min->SetFunction(funChi2);
 
   int    randomSeed = 248;
   TRandom2 r(randomSeed);
@@ -258,19 +225,19 @@ int main()
   double kstart[2] = {k1start, k2start};
   double kpar[2] = {0.0,0.0};
 
-  double chi2 = FindMinChi2(kstart, kpar);
+  double chi2 = FindMinChi2(kstart, kpar, min);
   minich2 = chi2;
   minik1 = kpar[0];
   minik2 = kpar[1];
 
-  for (int i = 0; i < 1; i++){
+  for (int i = 0; i < 300; i++){
     k1start = r.Uniform(1e7,2e7);
     k2start = r.Uniform(3e5,8e5);
 
     kstart[0] = k1start;
     kstart[1] = k2start;
 
-    chi2 = FindMinChi2(kstart, kpar);
+    chi2 = FindMinChi2(kstart, kpar, min);
     if (chi2 < minich2){
       minik1 = kpar[0];
       minik2 = kpar[1];
